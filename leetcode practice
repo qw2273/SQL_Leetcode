@@ -1,0 +1,383 @@
+### 176. 
+select t.salary as secondhightest 
+from (select salary, rank() over(order by salary desc) 
+from test176 limit 1,1) as t ;
+
+### 177. 
+DROP FUNCTION IF EXISTS getNthsalary； 
+create function getNthsalary(N int) returns varchar(10)
+begin 
+declare M int 
+set M = N -1 
+RETURN （ 
+select distinct salary from test176 order by salary limit M, 1 
+); 
+END 
+
+### 603. 
+create table test603(
+	seat_id int primary key not null auto_increment, 
+     free  int) ;
+insert into test603(free) values(1);
+insert into test603(free) values(0);
+insert into test603(free) values(1);
+insert into test603(free) values(1);
+insert into test603(free) values(1);
+
+select distinct t1.seat_id  from test603 as t1 left join test603 as t2 on abs(t2.seat_id - t1. seat_id) =1 where t1.free =1 and t2.free =1 order by t1.seat_id;
+
+
+### 180 consecutive number that appears at least 3 times 
+
+create table test180(
+id int primary key not null auto_increment,
+num int); 
+
+# drop procedure dowhile; 
+DELIMITER //  
+CREATE PROCEDURE dowhile(IN n int , v int  )   
+begin 
+declare x int default 0;
+while x < n  do 
+insert into test180(num) values(v); 
+set x = x +1; 
+end while;
+end//
+delimiter ; 
+
+call dowhile(3,1);
+call dowhile(1,2);
+call dowhile(1,1);
+call dowhile(2,2);
+call dowhile(1,2);
+call dowhile(2,2);
+select distinct t1.num 
+from test180 as t1 
+left join  test180 as t2  on abs(t1.id - t2.id) =1  
+left join test180 as t3 on abs(t2.id - t3.id) =1 and abs(t1.id  - t3.id ) =2 
+where t1.num  = t2.num   and  t1.num  = t3.num  and  t2.num  = t2.num; 
+drop table test180; 
+
+### 184. 
+create table  test184(
+id int primary key not null auto_increment, 
+name varchar(10),
+salary int,
+departmentid int);
+insert into test184(name, salary, departmentid) values(‘Joe’, 70000, 1);
+insert into test184(name, salary, departmentid) values('Henery', 80000,2);
+insert into test184(name, salary, departmentid) values('Sam', 60000, 2);
+insert into test184(name, salary, departmentid) values('Max', 90000, 1);
+
+create table  test1842(
+id int primary key not null,
+name varchar(10));
+insert into test1842(id, name)   values(1, 'IT');
+insert into test1842(id, name)   values(2, 'Sales');
+
+select t2.name as department, t1.name as employee ,  max(t1.salary) as max 
+from test184 as t1
+inner join test1842 as t2 on t1. departmentid = t2.id
+group by  t2.name, t1.name
+limit 1 
+
+select t1.name as employee,  t2.name as department, t1.salary as maxsalary 
+from test184 as t1, test1842  as t2  
+where t1. departmentid = t2.id
+and t1.salary in (select max(salary) from test184 group by departmentid )  
+ 
+### 185. 
+insert into test184(name, salary, departmentid) values('Janet', 69000, 1);
+insert into test184(name, salary, departmentid) values('Randy', 85000, 1);
+
+select t2.employee, t3.name, t2.salary
+from 
+( 
+select t1.name as employee, t1.salary as salary,  t1.departmentid as departmentid
+from 
+( select *, rank() over(partition by departmentid order by salary desc ) as rnk  from test184 ) as t1
+where t1.rnk <=3  
+) as t2 
+inner join test1842  as t3 on t2. departmentid = t3.id; 
+
+### 595. 
+select name, population, area
+from world
+where population > 25000000 or  area > 3000000
+
+196 
+delete p1 
+from person as p1, person as p2
+where p1.email =p2.email and p1.id <> p2.id
+
+
+#### 626  change seat
+```
+# solution ： if id is even, then id -1 ; else if id is odd and is the last one, then id; else id +1 
+Select   student, 
+	case when seat.id%2 = 0 then  seat.id - 1 
+	when  seat.id%2 != 0 and seat.id  ==  (select count(*) from  seat  )  then seat.id 
+	else  seat.id + 1 end as id
+from seat 
+order by id
+```
+
+### 569 find median salary for each company 
+create table test569(
+id int primary key not null auto_increment,
+company varchar(10),
+salary int );
+insert into test569( company, salary) values('A',2341);
+insert into test569( company, salary) values('A',341);
+insert into test569( company, salary) values('A',15);
+insert into test569( company, salary) values('A',15314);
+insert into test569( company, salary) values('A',451);
+insert into test569( company, salary) values('A',531);
+insert into test569( company, salary) values('C',2345);
+insert into test569( company, salary) values('C',2645);
+insert into test569( company, salary) values('C',2645);
+insert into test569( company, salary) values('C',2652);
+insert into test569( company, salary) values('C',65);
+
+
+select t1.id, t1.company, t1.salary  
+from 
+(select id, company, salary, row_number() over(partition by company order by salary ) as row_id
+from test569)  as  t1
+left join 
+(select company, count(*) as n_cnt 
+from test569
+group by company) as t2
+on t1.company = t2.company
+where  (t1.row_id = (t2.n_cnt/2) +1) or (t1.row_id = t2.n_cnt/2) 
+or (t1.row_id = (t2.n_cnt+1) /2); 
+
+
+### 615 Compare company average salary and department  salary
+
+ create table test615(
+ id int primary key not null auto_increment,
+employee_id int,
+ amount int,
+pay_date DATE);
+insert into test615(employee_id, amount, pay_date) values(1,9000,'2017-03-31');
+insert into test615(employee_id, amount, pay_date) values(2,6000,'2017-03-31');
+insert into test615(employee_id, amount, pay_date) values(3,10000,'2017-03-31');
+insert into test615(employee_id, amount, pay_date) values(1,7000,'2017-02-28');
+insert into test615(employee_id, amount, pay_date) values(2,6000,'2017-02-28');
+insert into test615(employee_id, amount, pay_date) values(3,8000,'2017-02-28');
+
+create table test615_2(
+employee_id int primary key,
+department_id int);
+insert into test615_2(employee_id, department_id) values(1,1) ; 
+insert into test615_2(employee_id, department_id) values(2,2) ; 
+insert into test615_2(employee_id, department_id) values(3,2) ; 
+
+
+select date_format(t.pay_date, '%Y-%m') as pay_month, t.department_id, 
+case when t. avg_department = t. avg_company then 'same'
+when  t. avg_department >  t. avg_company then 'higher'
+else 'lower' end as comparison 
+from 
+( 
+select distinct t2. department_id as department_id,  t1. pay_date as pay_date, avg(t1.amount) over(partition by  pay_date, t2.department_id) as avg_department,
+avg(t1.amount) over (partition by t1.pay_date) as avg_company  
+from test615 as t1
+inner join test615_2 as t2 
+on t1.employee_id = t2.employee_id 
+) as t 
+order by pay_month desc; 
+
+### 570 find manager who at least manage five employee
+
+ create table test570(
+ id int primary key not null,
+name varchar(10) ,
+ department char(10) ,
+managerid int);
+insert into test570(id, name, department,managerid) values( 101,  'John', 'A', NULL); 
+insert into test570(id, name, department,managerid) values( 102,  'Dan', 'A', 101); 
+insert into test570(id, name, department,managerid) values( 103,  'James', 'A', 101); 
+insert into test570(id, name, department,managerid) values( 104,  'Amy', 'A', 101); 
+insert into test570(id, name, department,managerid) values( 105,  'Anne', 'A', 101); 
+insert into test570(id, name, department,managerid) values( 106,  'Ron', 'B', 101); 
+
+select t.Name 
+from test570 as t  , 
+( select distinct managerid , count(name) over( partition by managerid) as n_employee 
+from test570 ) as b
+where t.id = b.managerid and b.n_employee >=5; 
+
+
+### 597 calculate accept rate 
+select ifnull( round(  count( distinct t1. sender_id, t1. send_to_id) /count(distinct t2.requester_id, t2.accepter_id) ,2) ,0) as accept_rate
+select count(distinct *) as accept_num 
+from friend_request as t1, request_accepted as t2 
+
+### 574 find the first prize
+select candidate.name
+from  vote 
+left join candidate 
+on vote.candidateid = candidate.id
+limit 1; 
+
+### 178 
+create table test178(
+id int primary key not null auto_increment , 
+score decimal(10,4)); 
+insert into test178(score) values(3.5); 
+insert into test178(score) values(3.65); 
+insert into test178(score) values(4.00); 
+insert into test178(score) values(3.85); 
+insert into test178(score) values(4.00); 
+insert into test178(score) values(3.65); 
+
+# dense_rank
+select score, dense_rank() over(order by score desc) as rnk from test178; 
+
+# solution 2 对于每个score  count 比它大或等于的score的个数，个数大代表score小
+select *, 
+(select count(distinct t.score) from test178 as t where t.score >= b.score ) as rnk 
+from test178 as b 
+order by rnk asc ;
+
+### 579 Sum up previous monthly salary
+
+create table test579(
+id int not null ,
+month int,
+salary int); 
+insert into test579(id, month, salary) values(1,1,20);
+insert into test579(id,month, salary) values(1,2,30);
+insert into test579(id,month, salary) values(1,3,40);
+insert into test579(id,month, salary) values(1,4,60);
+insert into test579(id,month, salary) values(2,1,20);
+insert into test579(id,month, salary) values(2,2,30);
+
+select t.id, t.month, sum(salary) over(partition by t.id order by month)  as sal
+from test579 as t ,
+(select id, max(month) as last_month 
+from test579 group by id) as b 
+where t.id = b.id and t.month<b.last_month 
+order by t.id, t.month desc; 
+
+### 608 find tree parent and son node 
+create table test608(
+id int not null primary key auto_increment,
+p_id int);
+insert into test608(p_id) values(NULL) ;
+insert into test608(p_id) values(1) ;
+insert into test608(p_id) values(1) ;
+insert into test608(p_id) values(2);
+insert into test608(p_id) values(2) ;
+
+# solution one： case when
+select t.id as id , 
+case when p_id is null then 'root'
+when  t.id  in (select p_id from test608 ) then 'inner' 
+else 'leaf' end  as type 
+from test608 as t; 
+
+# solution  two ： two ifs
+select id, 
+if(isnull(t.p_id) ,'root', if(t.id in (select p_id from test608) , 'inner', 'leaf')) as type
+from test608 ast； 
+
+### 610  Triangle construct 
+select x,y,z,
+case when x+y <= z or x+z<=y or y+z <=x then 'No' else 'Yes' end as triangle 
+from test610; 
+
+### 181 find employee who earns more than manager 
+select t1.name
+from test181 as t1 
+inner join test181 as t2 
+on t1.managerid  = t2.id 
+where  t1.manage  t1.salary > t2.salary ; 
+
+### 182 repeat email 
+select email
+from test182 
+group by email
+having count(*) >1 ; 
+
+### 183 find client who never ordered
+select name 
+from customers
+where id not in (select customerid from orders ) 
+
+### 196 delete repeated email
+delete t1 
+from test196 as t1, test196 as t2 
+where t1.email = t2.email  and t1.id > t2.id 
+
+## 197  the higher temperature
+create table test197(
+id int primary key auto_increment,
+recorddate date, 
+temp int); 
+insert into  test197(recorddate, temp) values('2015-01-01', 10);
+insert into  test197(recorddate, temp) values('2015-01-02', 25);
+insert into  test197(recorddate, temp) values('2015-01-03', 20);
+insert into  test197(recorddate, temp) values('2015-01-04', 30);
+
+select t2.id 
+from test197  as t1
+inner  join test197 as t2 
+on t1.id = t2.id -1 and t2.temp > t1.temp 
+
+### 262  find unbanned user order cancel rate during 2013/10/1 到 2013/10/3 
+
+create table test262(
+id int primary key auto_increment,
+client_id int,
+driver_id  int, 
+city_id int, 
+status varchar(10), 
+request_date date); 
+insert into test262( client_id, driver_id, city_id, status, request_date) values(
+1,10,1,'cp', '2013-10-01'); 
+insert into test262( client_id, driver_id, city_id, status, request_date) values(
+2,11,1, 'cancl_driv', '2013-10-01'); 
+insert into test262( client_id, driver_id, city_id, status, request_date) values(
+3,12,6, 'cp', '2013-10-01'); 
+insert into test262( client_id, driver_id, city_id, status, request_date) values(
+4,13,6, 'cancl_clnt', '2013-10-01'); 
+insert into test262( client_id, driver_id, city_id, status, request_date) values(
+1,10,1 , 'cp', '2013-10-02'); 
+insert into test262( client_id, driver_id, city_id, status, request_date) values(
+2,11,6 , 'cp', '2013-10-02'); 
+insert into test262( client_id, driver_id, city_id, status, request_date) values(
+2,12,12, 'cp', '2013-10-03'); 
+insert into test262( client_id, driver_id, city_id, status, request_date) values(
+3,10,12, 'cp', '2013-10-03'); 
+insert into test262( client_id, driver_id, city_id, status, request_date) values(
+4,13,12, 'cancl_driv', '2013-10-03'); 
+
+create table test262_2(
+userid int, 
+banned char(10),
+role varchar(10));
+insert into test262_2 (userid, banned, role) values(1, 'No', 'C'); 
+insert into test262_2 (userid, banned, role) values(2,'Yes' , 'C'); 
+insert into test262_2 (userid, banned, role) values(3, 'No', 'C'); 
+insert into test262_2 (userid, banned, role) values(4,  'No', 'C'); 
+
+select t1.request_date as day, 
+round( sum( if(t1.status != 'cp', 1, 0) )/ count(*) ,2)   as cancel_rate  
+from test262 as t1 
+where t1.client_id in (select userid from test262_2 where banned = 'No' and role = 'C') 
+and t1.request_date between '2013-10-01' and '2013-10-03'
+group by request_date ;
+
+
+### 577. find employee whose  bonus <1000 
+select t1.name, 
+from  employee as t1
+left join  bonus  as t2 
+on t1.empId = t2.empId
+where t2.bonus <  1000 or bonus is nulll 
+
+
+
